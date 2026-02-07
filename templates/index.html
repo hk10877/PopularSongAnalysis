@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spike Tracker | {{ song if song else "Music Trends" }}</title>
+    <title>Hype Graph | {{ song if song else "Music Trends" }}</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,6 +19,7 @@
                               radial-gradient(circle at 100% 100%, #0f172a 0%, transparent 50%);
             min-height: 100vh;
             color: #f8fafc;
+            margin: 0;
         }
 
         .glass {
@@ -37,31 +38,35 @@
             background: rgba(56, 189, 248, 0.1);
             transform: translateX(5px);
         }
+
+        /* Ensure the chart container scales well on wide screens */
+        .chart-container {
+            position: relative;
+            height: 400px; /* Increased height for better visibility on wide screens */
+            width: 100%;
+        }
     </style>
 </head>
-<body class="py-10 px-4">
-
-<div class="max-w-4xl mx-auto">
-    <header class="text-center mb-12">
-        <h1 class="text-5xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">
-            Music Spike Tracker
+<body class="py-6 px-4 md:px-8"> <div class="max-w-full mx-auto"> <header class="text-center mb-10">
+        <h1 class="text-6xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">
+            Hype Graph
         </h1>
-        <p class="text-slate-400">Analyze search trends and discover the "why" behind the hype.</p>
+        <p class="text-slate-400 text-lg">Analyze search trends and discover the "why" behind the hype.</p>
     </header>
 
     <div class="glass rounded-2xl p-8 mb-8 shadow-2xl">
-        <form action="/analyze" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-1">
+        <form action="/analyze" method="post" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div class="md:col-span-5">
                 <label class="block text-sm font-medium text-slate-400 mb-1">Song or Topic</label>
-                <input type="text" name="song" placeholder="e.g. Blinding Lights" required
+                <input type="text" name="song" placeholder="e.g. Blinding Lights" value="{{ song if song else '' }}" required
                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white neon-border transition-all">
             </div>
-            <div class="md:col-span-1">
+            <div class="md:col-span-5">
                 <label class="block text-sm font-medium text-slate-400 mb-1">Artist</label>
-                <input type="text" name="artist" placeholder="e.g. The Weeknd"
+                <input type="text" name="artist" placeholder="e.g. The Weeknd" value="{{ artist if artist else '' }}"
                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white neon-border transition-all">
             </div>
-            <div class="flex items-end">
+            <div class="md:col-span-2 flex items-end">
                 <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg shadow-sky-500/20">
                     Analyze Now
                 </button>
@@ -70,42 +75,42 @@
     </div>
 
     {% if dates %}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
         
-        <div class="lg:col-span-2 space-y-6">
-            <div class="glass rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold flex items-center gap-2">
+        <div class="xl:col-span-3 space-y-6">
+            <div class="glass rounded-2xl p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-semibold flex items-center gap-2">
                         <i data-lucide="trending-up" class="text-sky-400"></i> Search Interest
                     </h2>
-                    <span class="text-xs text-slate-500 uppercase tracking-widest">Last 12 Months</span>
+                    <span class="text-sm text-slate-500 uppercase tracking-widest font-mono">Interest Over Time</span>
                 </div>
-                <div class="bg-slate-900/50 rounded-xl p-4">
-                    <canvas id="myChart" height="200"></canvas>
+                <div class="bg-slate-900/50 rounded-xl p-4 chart-container">
+                    <canvas id="myChart"></canvas>
                 </div>
             </div>
 
             {% if explanation %}
-            <div class="glass rounded-2xl p-6 border-l-4 border-sky-500">
-                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+            <div class="glass rounded-2xl p-8 border-l-4 border-sky-500">
+                <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">
                     <i data-lucide="sparkles" class="text-yellow-400"></i> Insight for {{ selected_date }}
                 </h2>
-                <div class="prose prose-invert max-w-none text-slate-300">
+                <div class="prose prose-invert max-w-none text-slate-300 text-lg leading-relaxed">
                     {{ explanation | replace('\n', '<br>') | safe }}
                 </div>
             </div>
             {% endif %}
         </div>
 
-        <div class="lg:col-span-1 space-y-6">
+        <div class="xl:col-span-1 space-y-6">
             <div class="glass rounded-2xl p-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
                     <i data-lucide="zap" class="text-orange-400"></i> Detected Spikes
                 </h3>
-                <div class="space-y-2">
+                <div class="space-y-3">
                     {% for spike_date in spike_dates %}
                     <a href="/explain?song={{ song | urlencode }}&artist={{ artist | urlencode }}&date={{ spike_date | urlencode }}" 
-                       class="spike-link flex items-center justify-between p-3 rounded-xl bg-slate-800/50 transition-all group">
+                       class="spike-link flex items-center justify-between p-4 rounded-xl bg-slate-800/50 transition-all group">
                         <span class="text-sm font-medium text-slate-300 group-hover:text-sky-400">{{ spike_date }}</span>
                         <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600 group-hover:text-sky-400"></i>
                     </a>
@@ -115,12 +120,12 @@
 
             {% if headlines %}
             <div class="glass rounded-2xl p-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
                     <i data-lucide="newspaper" class="text-emerald-400"></i> Context News
                 </h3>
                 <ul class="space-y-4">
                     {% for headline in headlines %}
-                    <li class="text-xs text-slate-400 leading-relaxed border-b border-slate-700/50 pb-2 last:border-0">
+                    <li class="text-sm text-slate-400 leading-relaxed border-b border-slate-700/50 pb-3 last:border-0">
                         {{ headline }}
                     </li>
                     {% endfor %}
@@ -146,8 +151,8 @@
                     borderColor: '#38bdf8',
                     borderWidth: 3,
                     pointBackgroundColor: '#38bdf8',
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
+                    pointRadius: 2,
+                    pointHoverRadius: 8,
                     tension: 0.4,
                     fill: true,
                     backgroundColor: gradient,
@@ -155,10 +160,28 @@
             },
             options: {
                 responsive: true,
-                plugins: { legend: { display: false } },
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 14 },
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false
+                    }
+                },
                 scales: {
-                    y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' }, beginAtZero: true },
-                    x: { grid: { display: false }, ticks: { color: '#64748b', maxRotation: 45, minRotation: 45 } }
+                    y: { 
+                        grid: { color: '#1e293b' }, 
+                        ticks: { color: '#64748b', font: { size: 12 } }, 
+                        beginAtZero: true 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { color: '#64748b', maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 12 } 
+                    }
                 }
             }
         });
@@ -166,8 +189,8 @@
     {% endif %}
 
     {% if error %}
-    <div class="mt-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-center">
-        <p>{{ error }}</p>
+    <div class="mt-8 p-6 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-center">
+        <p class="font-semibold">{{ error }}</p>
     </div>
     {% endif %}
 </div>

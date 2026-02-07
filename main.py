@@ -10,6 +10,7 @@ from scipy.signal import find_peaks
 import datetime
 from groq import Groq
 from groq.types.chat import ( ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam )
+from fastapi.staticfiles import StaticFiles
 
 from urllib.parse import quote
 
@@ -19,6 +20,7 @@ HF_API_KEY = os.getenv("HF_API_KEY")
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")  # Not used in this example, but kept for potential expansion
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
