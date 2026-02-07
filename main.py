@@ -8,14 +8,21 @@ import serpapi
 import numpy as np
 from scipy.signal import find_peaks
 import datetime
+from groq import Groq
+from groq.types.chat import ( ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam )
+
 from urllib.parse import quote
 
 load_dotenv()
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")  # Not used in this example, but kept for potential expansion
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+
+
+
 
 
 def get_trends_data(query):
@@ -96,6 +103,45 @@ Explain in 3 short bullet points why this song spiked in popularity{date_str}.
         return "Model is loading, refresh once."
 
 
+def groq_summarize(headlines, song, artist, date=None):
+    api_url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    text = "\n".join(headlines)
+    date_str = f" around {date}" if date else ""
+
+    prompt = f"""
+These are recent news headlines about the song "{song}" by {artist}{date_str}:
+{text}
+Explain in 3 short bullet points why this song spiked in popularity{date_str}.
+"""
+
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.3,
+    }
+
+    response = requests.post(api_url, headers=headers, json=payload)
+    result = response.json()
+    print(response)
+    print()
+    print(result)
+
+    try:
+        return result["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return "No summary available."
+
+
+
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -147,7 +193,7 @@ def explain(request: Request, song: str, artist: str, date: str):
 
     news_query = f"{song} {artist} music"
     headlines = get_headlines(news_query, start_date, end_date)
-    explanation = summarize(headlines, song, artist, date)
+    explanation = groq_summarize(headlines, song, artist, date)
     return templates.TemplateResponse("index.html", {
         "request": request,
         "song": song,
