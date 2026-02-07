@@ -1,40 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Why Is This Song Popular?</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Popularity Spike Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial; padding: 40px; background: #f5f5f5; }
-        .card { background: white; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        button { padding: 10px 20px; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+        pre { white-space: pre-wrap; }
     </style>
 </head>
 <body>
+    <h1>Song Popularity Spike Tracker</h1>
+    <form action="/analyze" method="post">
+        <label for="song">Song/Album/Artist:</label>
+        <input type="text" id="song" name="song" required>
+        <label for="artist">Artist (if applicable):</label>
+        <input type="text" id="artist" name="artist">
+        <button type="submit">Analyze</button>
+    </form>
 
-<h1>Why Is This Song Popular?</h1>
+    {% if dates %}
+    <h2>Popularity Interest Over Time (Proxy for Listener Spikes)</h2>
+    <canvas id="myChart" width="400" height="200"></canvas>
+    <script>
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ dates | tojson }},
+                datasets: [{
+                    label: 'Interest Level',
+                    data: {{ values | tojson }},
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
 
-<form method="post" action="/analyze">
-    <input name="song" placeholder="Song Name" required>
-    <input name="artist" placeholder="Artist" required>
-    <button type="submit">Analyze</button>
-</form>
-
-{% if summary %}
-<div class="card">
-    <h2>AI Explanation</h2>
-    <p>{{ summary }}</p>
-</div>
-{% endif %}
-
-{% if headlines %}
-<div class="card">
-    <h3>Recent Headlines</h3>
+    <h2>Detected Spike Dates (Click for Explanation)</h2>
     <ul>
-        {% for h in headlines %}
-        <li>{{ h }}</li>
+        {% for spike_date in spike_dates %}
+        <li><a href="/explain?song={{ song | urlencode }}&artist={{ artist | urlencode }}&date={{ spike_date | urlencode }}">{{ spike_date }}</a></li>
         {% endfor %}
     </ul>
-</div>
-{% endif %}
+    {% endif %}
 
+    {% if explanation %}
+    <h2>Explanation for Spike on {{ selected_date }}</h2>
+    <pre>{{ explanation }}</pre>
+    {% endif %}
+
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
 </body>
 </html>
