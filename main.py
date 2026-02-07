@@ -4,13 +4,6 @@ from fastapi.templating import Jinja2Templates
 import requests
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-import requests
-import os
-from dotenv import load_dotenv
 import serpapi
 import numpy as np
 from scipy.signal import find_peaks
@@ -19,6 +12,7 @@ from urllib.parse import quote
 
 load_dotenv()
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+HF_API_KEY = os.getenv("HF_API_KEY")
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")  # Not used in this example, but kept for potential expansion
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -44,6 +38,7 @@ def get_trends_data(query):
                 item['values'][0]['value'] = float(raw_value)
         return results["interest_over_time"]["timeline_data"]
     return []
+
 
 def detect_spikes(timeline_data):
     if not timeline_data:
@@ -74,6 +69,31 @@ def get_headlines(query, start_date=None, end_date=None):
         for item in data["news_results"][:5]:
             headlines.append(item["title"])
     return headlines
+
+
+def summarize(headlines, song, artist, date=None):
+    api_url = "https://api-inference.huggingface.co/models/google/flan-t5-base"
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}"
+    }
+    text = "\n".join(headlines)
+    date_str = f" around {date}" if date else ""
+    prompt = f"""
+These are recent news headlines about the song "{song}" by {artist}{date_str}:
+{text}
+Explain in 3 short bullet points why this song spiked in popularity{date_str}.
+"""
+    response = requests.post(
+        api_url,
+        headers=headers,
+        json={"inputs": prompt}
+    )
+    result = response.json()
+    # Hugging Face returns a list when successful
+    if isinstance(result, list):
+        return result[0].get("generated_text", "No summary available.")
+    else:
+        return "Model is loading, refresh once."
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -107,11 +127,13 @@ def explain(request: Request, song: str, artist: str, date: str):
     values = [item['values'][0]['value'] for item in timeline_data]
     spike_dates = detect_spikes(timeline_data)
 
-    # Parse date and set range +/- 3 days
+    # Parse date range and extract start date for datetime
     try:
-        selected_date = datetime.datetime.strptime(date, "%b %d, %Y")  # e.g., "Jan 1, 2023"
-        start_date = selected_date - datetime.timedelta(days=3)
-        end_date = selected_date + datetime.timedelta(days=3)
+        parsed_date = parse_date_range(date)
+        start_date = parsed_date["start"] - datetime.timedelta(days=3)
+        end_date = parsed_date["end"] + datetime.timedelta(days=3)
+        month = parsed_date["month"]
+        year = parsed_date["year"]
     except ValueError:
         return templates.TemplateResponse("index.html", {
             "request": request,
@@ -125,11 +147,7 @@ def explain(request: Request, song: str, artist: str, date: str):
 
     news_query = f"{song} {artist} music"
     headlines = get_headlines(news_query, start_date, end_date)
-
-    # Simple explanation without AI: Just list headlines as potential reasons
-    explanation = "Possible reasons for the spike based on news headlines:\n" + "\n".join(
-        [f"- {h}" for h in headlines]) if headlines else "No relevant headlines found for this period."
-
+    explanation = summarize(headlines, song, artist, date)
     return templates.TemplateResponse("index.html", {
         "request": request,
         "song": song,
@@ -137,10 +155,38 @@ def explain(request: Request, song: str, artist: str, date: str):
         "dates": dates,
         "values": values,
         "spike_dates": spike_dates,
-        "selected_date": date,
+        "selected_date": date,  # Keep the full range for display
         "explanation": explanation,
-        "headlines": headlines
+        "headlines": headlines  # Optional: Keep if you want to show raw headlines too
     })
+
+
+def parse_date_range(date: str):
+    parts = date.split(',')
+    if len(parts) != 2:
+        raise ValueError("Invalid date format: missing comma separator.")
+    left = parts[0].replace('\u2009', '').strip()  # Remove thin space, e.g., "Aug 24–30"
+    year = parts[1].strip()  # "2025"
+    month_day_range = left.split(" ", 1)
+    if len(month_day_range) != 2:
+        raise ValueError("Invalid date format: missing space after month.")
+    month = month_day_range[0]
+    day_range = month_day_range[1]
+    day_parts = day_range.replace('–', '-').split('-')  # Handle en-dash
+    if len(day_parts) != 2:
+        raise ValueError("Invalid date format: missing day range separator.")
+    start_day = day_parts[0]
+    end_day = day_parts[1]
+    start_str = f"{month} {start_day}, {year}"
+    end_str = f"{month} {end_day}, {year}"
+    start = datetime.datetime.strptime(start_str, "%b %d, %Y")
+    end = datetime.datetime.strptime(end_str, "%b %d, %Y")
+    return {
+        "start": start,
+        "end": end,
+        "year": int(year),
+        "month": month
+    }
 
 
 if __name__ == "__main__":

@@ -55,6 +55,14 @@
     {% if explanation %}
     <h2>Explanation for Spike on {{ selected_date }}</h2>
     <pre>{{ explanation }}</pre>
+    {% if headlines %}
+    <h3>Related Headlines</h3>
+    <ul>
+        {% for headline in headlines %}
+        <li>{{ headline }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     {% endif %}
 
     {% if error %}
