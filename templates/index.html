@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Why Is This Song Popular?</title>
+    <style>
+        body { font-family: Arial; padding: 40px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        button { padding: 10px 20px; }
+    </style>
+</head>
+<body>
+
+<h1>Why Is This Song Popular?</h1>
+
+<form method="post" action="/analyze">
+    <input name="song" placeholder="Song Name" required>
+    <input name="artist" placeholder="Artist" required>
+    <button type="submit">Analyze</button>
+</form>
+
+{% if summary %}
+<div class="card">
+    <h2>AI Explanation</h2>
+    <p>{{ summary }}</p>
+</div>
+{% endif %}
+
+{% if headlines %}
+<div class="card">
+    <h3>Recent Headlines</h3>
+    <ul>
+        {% for h in headlines %}
+        <li>{{ h }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+</body>
+</html>
