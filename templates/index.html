@@ -1,174 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Song Popularity Spike Tracker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spike Tracker | {{ song if song else "Music Trends" }}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a; /* Deep Slate */
+            background-image: radial-gradient(circle at 0% 0%, #1e293b 0%, transparent 50%),
+                              radial-gradient(circle at 100% 100%, #0f172a 0%, transparent 50%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
 
-<style>
-body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    margin: 0;
-    padding: 0;
-    color: white;
-}
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-.container {
-    max-width: 900px;
-    margin: 40px auto;
-    background: rgba(255,255,255,0.1);
-    padding: 30px;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
+        .neon-border:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
 
-h1, h2, h3 {
-    text-align: center;
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-input {
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-}
-
-button {
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    background: #ff9800;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-button:hover {
-    background: #e68900;
-}
-
-.chart-box {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    margin-top: 20px;
-}
-
-.explanation-box {
-    background: rgba(0,0,0,0.4);
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 20px;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li {
-    margin: 8px 0;
-}
-
-a {
-    color: #ffd54f;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-.error {
-    color: #ff6b6b;
-    text-align: center;
-}
-</style>
+        .spike-link:hover {
+            background: rgba(56, 189, 248, 0.1);
+            transform: translateX(5px);
+        }
+    </style>
 </head>
+<body class="py-10 px-4">
 
-<body>
+<div class="max-w-4xl mx-auto">
+    <header class="text-center mb-12">
+        <h1 class="text-5xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">
+            Music Spike Tracker
+        </h1>
+        <p class="text-slate-400">Analyze search trends and discover the "why" behind the hype.</p>
+    </header>
 
-<div class="container">
-<h1>🎵 Song Popularity Spike Tracker</h1>
+    <div class="glass rounded-2xl p-8 mb-8 shadow-2xl">
+        <form action="/analyze" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-1">
+                <label class="block text-sm font-medium text-slate-400 mb-1">Song or Topic</label>
+                <input type="text" name="song" placeholder="e.g. Blinding Lights" required
+                       class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white neon-border transition-all">
+            </div>
+            <div class="md:col-span-1">
+                <label class="block text-sm font-medium text-slate-400 mb-1">Artist</label>
+                <input type="text" name="artist" placeholder="e.g. The Weeknd"
+                       class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white neon-border transition-all">
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg shadow-sky-500/20">
+                    Analyze Now
+                </button>
+            </div>
+        </form>
+    </div>
 
-<form action="/analyze" method="post">
-    <input type="text" name="song" placeholder="Song / Album / Topic" required>
-    <input type="text" name="artist" placeholder="Artist (optional)">
-    <button type="submit">Analyze Popularity</button>
-</form>
+    {% if dates %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <i data-lucide="trending-up" class="text-sky-400"></i> Search Interest
+                    </h2>
+                    <span class="text-xs text-slate-500 uppercase tracking-widest">Last 12 Months</span>
+                </div>
+                <div class="bg-slate-900/50 rounded-xl p-4">
+                    <canvas id="myChart" height="200"></canvas>
+                </div>
+            </div>
 
-{% if dates %}
-<h2>Interest Over Time</h2>
-<div class="chart-box">
-<canvas id="myChart"></canvas>
+            {% if explanation %}
+            <div class="glass rounded-2xl p-6 border-l-4 border-sky-500">
+                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="text-yellow-400"></i> Insight for {{ selected_date }}
+                </h2>
+                <div class="prose prose-invert max-w-none text-slate-300">
+                    {{ explanation | replace('\n', '<br>') | safe }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="lg:col-span-1 space-y-6">
+            <div class="glass rounded-2xl p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="zap" class="text-orange-400"></i> Detected Spikes
+                </h3>
+                <div class="space-y-2">
+                    {% for spike_date in spike_dates %}
+                    <a href="/explain?song={{ song | urlencode }}&artist={{ artist | urlencode }}&date={{ spike_date | urlencode }}" 
+                       class="spike-link flex items-center justify-between p-3 rounded-xl bg-slate-800/50 transition-all group">
+                        <span class="text-sm font-medium text-slate-300 group-hover:text-sky-400">{{ spike_date }}</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600 group-hover:text-sky-400"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if headlines %}
+            <div class="glass rounded-2xl p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="newspaper" class="text-emerald-400"></i> Context News
+                </h3>
+                <ul class="space-y-4">
+                    {% for headline in headlines %}
+                    <li class="text-xs text-slate-400 leading-relaxed border-b border-slate-700/50 pb-2 last:border-0">
+                        {{ headline }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+        gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ dates | tojson }},
+                datasets: [{
+                    label: 'Interest',
+                    data: {{ values | tojson }},
+                    borderColor: '#38bdf8',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#38bdf8',
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: gradient,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' }, beginAtZero: true },
+                    x: { grid: { display: false }, ticks: { color: '#64748b', maxRotation: 45, minRotation: 45 } }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+
+    {% if error %}
+    <div class="mt-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-center">
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
 </div>
 
 <script>
-var ctx = document.getElementById('myChart').getContext('2d');
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: {{ dates | tojson }},
-        datasets: [{
-            label: 'Interest Level',
-            data: {{ values | tojson }},
-            borderColor: '#1e3c72',
-            backgroundColor: 'rgba(30,60,114,0.2)',
-            tension: 0.3,
-            fill: true
-        }]
-    },
-    options: {
-        scales: {
-            y: { beginAtZero: true }
-        }
-    }
-});
+    lucide.createIcons();
 </script>
-
-<h3>Detected Spikes</h3>
-<ul>
-{% for spike_date in spike_dates %}
-<li>
-<a href="/explain?song={{ song | urlencode }}&artist={{ artist | urlencode }}&date={{ spike_date | urlencode }}">
-📈 {{ spike_date }}
-</a>
-</li>
-{% endfor %}
-</ul>
-{% endif %}
-
-{% if explanation %}
-<div class="explanation-box">
-<h2>Why the Spike Happened</h2>
-<p>{{ explanation }}</p>
-
-{% if headlines %}
-<h3>Related Headlines</h3>
-<ul>
-{% for headline in headlines %}
-<li>📰 {{ headline }}</li>
-{% endfor %}
-</ul>
-{% endif %}
-</div>
-{% endif %}
-
-{% if error %}
-<p class="error">{{ error }}</p>
-{% endif %}
-
-</div>
 </body>
 </html>
