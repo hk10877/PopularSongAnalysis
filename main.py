@@ -11,7 +11,7 @@ import datetime
 from groq import Groq
 from groq.types.chat import ( ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam )
 from fastapi.staticfiles import StaticFiles
-
+import re
 from urllib.parse import quote
 
 load_dotenv()
@@ -24,7 +24,107 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-
+def verify_song_artist(song, artist):
+    """
+    Verify if the song and artist combination exists using SerpAPI Google Search.
+    Returns a dict with 'valid' boolean and 'message' if invalid.
+    ONLY validates if the artist is the PRIMARY artist for the song.
+    """
+    if not song or not artist:
+        return {"valid": False, "message": "Please provide both song name and artist."}
+    
+    # Search with both song and artist together in quotes
+    search_query = f'"{song}" "{artist}" site:spotify.com OR site:music.apple.com OR site:genius.com'
+    
+    try:
+        url = "https://serpapi.com/search"
+        params = {
+            "q": search_query,
+            "api_key": SERPAPI_KEY,
+            "num": 10
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        organic_results = data.get("organic_results", [])
+        
+        # If no results from music platforms, try broader search
+        if not organic_results or len(organic_results) < 2:
+            search_query = f'"{song}" by "{artist}"'
+            params["q"] = search_query
+            response = requests.get(url, params=params)
+            data = response.json()
+            organic_results = data.get("organic_results", [])
+        
+        if not organic_results or len(organic_results) < 2:
+            return {
+                "valid": False,
+                "message": f"Song '{song}' by {artist} not found. Please check your spelling."
+            }
+        
+        artist_lower = artist.lower().strip()
+        song_lower = song.lower().strip()
+        
+        # Normalize by removing special characters
+        artist_normalized = re.sub(r'[^\w\s]', '', artist_lower)
+        song_normalized = re.sub(r'[^\w\s]', '', song_lower)
+        
+        # Count how many results show this artist as the PRIMARY artist
+        # Look for patterns like "Song - Artist", "Artist - Song", "Song by Artist"
+        primary_artist_matches = 0
+        
+        for result in organic_results[:10]:
+            title = result.get("title", "").lower()
+            link = result.get("link", "").lower()
+            
+            # Normalize title
+            title_normalized = re.sub(r'[^\w\s]', '', title)
+            
+            # Skip if either song or artist not mentioned at all
+            if not ((song_lower in title or song_normalized in title_normalized) and
+                    (artist_lower in title or artist_normalized in title_normalized)):
+                continue
+            
+            # Check for patterns that indicate PRIMARY artist
+            # Pattern 1: "Song - Artist" or "Song – Artist" (most common)
+            pattern1 = rf'{re.escape(song_lower)}\s*[-–—]\s*{re.escape(artist_lower)}'
+            pattern1_norm = rf'{re.escape(song_normalized)}\s*{re.escape(artist_normalized)}'
+            
+            # Pattern 2: "Artist - Song"
+            pattern2 = rf'{re.escape(artist_lower)}\s*[-–—]\s*{re.escape(song_lower)}'
+            pattern2_norm = rf'{re.escape(artist_normalized)}\s*{re.escape(song_normalized)}'
+            
+            # Pattern 3: "Song by Artist"
+            pattern3 = rf'{re.escape(song_lower)}\s+by\s+{re.escape(artist_lower)}'
+            pattern3_norm = rf'{re.escape(song_normalized)}\s+by\s+{re.escape(artist_normalized)}'
+            
+            # Check if any pattern matches
+            if (re.search(pattern1, title) or re.search(pattern1_norm, title_normalized) or
+                re.search(pattern2, title) or re.search(pattern2_norm, title_normalized) or
+                re.search(pattern3, title) or re.search(pattern3_norm, title_normalized)):
+                primary_artist_matches += 1
+        
+        # STRICT: Require at least 2 results showing this artist as PRIMARY artist
+        if primary_artist_matches >= 2:
+            return {
+                "valid": True,
+                "matched_song": song,
+                "matched_artist": artist
+            }
+        else:
+            return {
+                "valid": False,
+                "message": f"Cannot verify '{song}' by {artist}. The artist may be incorrect - please check the actual artist for this song."
+            }
+        
+    except Exception as e:
+        print(f"SerpAPI verification error: {e}")
+        return {
+            "valid": False,
+            "message": "Verification service unavailable. Please try again."
+        }
 
 
 def get_trends_data(query):
@@ -141,9 +241,6 @@ Explain in 3 short bullet points why this song spiked in popularity{date_str}.
         return "No summary available."
 
 
-
-
-
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -151,15 +248,29 @@ def home(request: Request):
 
 @app.post("/analyze", response_class=HTMLResponse)
 async def analyze(request: Request, song: str = Form(...), artist: str = Form(...)):
-    query = f"{song} {artist}"
+    # Verify song and artist first
+    verification = verify_song_artist(song.strip(), artist.strip())
+    
+    if not verification["valid"]:
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "error": verification.get("message", "Invalid song/artist combination.")
+        })
+    
+    # Use matched/verified names if available
+    verified_song = verification.get("matched_song", song)
+    verified_artist = verification.get("matched_artist", artist)
+    
+    query = f"{verified_song} {verified_artist}"
     timeline_data = get_trends_data(query)
     dates = [item['date'] for item in timeline_data]
     values = [item['values'][0]['value'] for item in timeline_data]
     spike_dates = detect_spikes(timeline_data)
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "song": song,
-        "artist": artist,
+        "song": verified_song,
+        "artist": verified_artist,
         "dates": dates,
         "values": values,
         "spike_dates": spike_dates
