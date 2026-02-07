@@ -1,72 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song Popularity Spike Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; }
-        pre { white-space: pre-wrap; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Song Popularity Spike Tracker</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    margin: 0;
+    padding: 0;
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: rgba(255,255,255,0.1);
+    padding: 30px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+h1, h2, h3 {
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input {
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+}
+
+button {
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: #ff9800;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #e68900;
+}
+
+.chart-box {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.explanation-box {
+    background: rgba(0,0,0,0.4);
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    margin: 8px 0;
+}
+
+a {
+    color: #ffd54f;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.error {
+    color: #ff6b6b;
+    text-align: center;
+}
+</style>
 </head>
+
 <body>
-    <h1>Song Popularity Spike Tracker</h1>
-    <form action="/analyze" method="post">
-        <label for="song">Song/Album/Artist:</label>
-        <input type="text" id="song" name="song" required>
-        <label for="artist">Artist (if applicable):</label>
-        <input type="text" id="artist" name="artist">
-        <button type="submit">Analyze</button>
-    </form>
 
-    {% if dates %}
-    <h2>Popularity Interest Over Time (Proxy for Listener Spikes)</h2>
-    <canvas id="myChart" width="400" height="200"></canvas>
-    <script>
-        var ctx = document.getElementById('myChart').getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ dates | tojson }},
-                datasets: [{
-                    label: 'Interest Level',
-                    data: {{ values | tojson }},
-                    borderColor: 'blue',
-                    fill: false
-                }]
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    </script>
+<div class="container">
+<h1>🎵 Song Popularity Spike Tracker</h1>
 
-    <h2>Detected Spike Dates (Click for Explanation)</h2>
-    <ul>
-        {% for spike_date in spike_dates %}
-        <li><a href="/explain?song={{ song | urlencode }}&artist={{ artist | urlencode }}&date={{ spike_date | urlencode }}">{{ spike_date }}</a></li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+<form action="/analyze" method="post">
+    <input type="text" name="song" placeholder="Song / Album / Topic" required>
+    <input type="text" name="artist" placeholder="Artist (optional)">
+    <button type="submit">Analyze Popularity</button>
+</form>
 
-    {% if explanation %}
-    <h2>Explanation for Spike on {{ selected_date }}</h2>
-    <pre>{{ explanation }}</pre>
-    {% if headlines %}
-    <h3>Related Headlines</h3>
-    <ul>
-        {% for headline in headlines %}
-        <li>{{ headline }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% endif %}
+{% if dates %}
+<h2>Interest Over Time</h2>
+<div class="chart-box">
+<canvas id="myChart"></canvas>
+</div>
 
-    {% if error %}
-    <p style="color: red;">{{ error }}</p>
-    {% endif %}
+<script>
+var ctx = document.getElementById('myChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ dates | tojson }},
+        datasets: [{
+            label: 'Interest Level',
+            data: {{ values | tojson }},
+            borderColor: '#1e3c72',
+            backgroundColor: 'rgba(30,60,114,0.2)',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+</script>
+
+<h3>Detected Spikes</h3>
+<ul>
+{% for spike_date in spike_dates %}
+<li>
+<a href="/explain?song={{ song | urlencode }}&artist={{ artist | urlencode }}&date={{ spike_date | urlencode }}">
+📈 {{ spike_date }}
+</a>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if explanation %}
+<div class="explanation-box">
+<h2>Why the Spike Happened</h2>
+<p>{{ explanation }}</p>
+
+{% if headlines %}
+<h3>Related Headlines</h3>
+<ul>
+{% for headline in headlines %}
+<li>📰 {{ headline }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</div>
+{% endif %}
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+</div>
 </body>
 </html>
