@@ -74,8 +74,8 @@ LASTFM_API_KEY=optional_key
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/hype-graph.git
-cd hype-graph
+git clone [https://github.com/your-username/hype-graph.git](https://github.com/hk10877/PopularSongAnalysis.git)
+cd PopularSongAnalysis
 
 ```
 
@@ -129,7 +129,9 @@ Open your browser at: `http://127.0.0.1:8000`
 
 ## 👥 Contributors
 
-* **Harshita Kumari** * [Team Member Name]
+* **Harshita Kumari** *
+* **Zara Ike** *
+* **Benita Benjamin** * 
 
 ## 📄 License
 
@@ -137,6 +139,4 @@ This project is licensed under the **MIT License**.
 
 ---
 
-**Hype Graph** helps answer the question: *“Why did this song suddenly blow up?”* 🎶📊
-
-Would you like me to help you draft the **AI prompt logic** for the spike explanations to make them even more accurate?
+**Hype Search** helps answer the question: *“Why did this song suddenly blow up?”* 🎶📊
