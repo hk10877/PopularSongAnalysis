@@ -129,9 +129,9 @@ Open your browser at: `http://127.0.0.1:8000`
 
 ## 👥 Contributors
 
-* **Harshita Kumari** *
-* **Zara Ike** *
-* **Benita Benjamin** * 
+* **Harshita Kumari** 
+* **Zara Ike** 
+* **Benita Benjamin** 
 
 ## 📄 License
 
