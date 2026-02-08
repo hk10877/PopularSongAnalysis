@@ -1,8 +1,8 @@
-# Hype Graph 🎵📈
+# Hype Search 🎵📈
 
 ### AI-Powered Song Trend Analyzer
 
-**Hype Graph** is a web application that analyzes why a song suddenly becomes popular. It combines Google Trends data, news headlines, and AI analysis to visually show spikes in interest and explain the real-world reasons behind the hype.
+**Hype Search** Hype Search is an AI‑powered tool that explains why songs suddenly spike in popularity. It pulls Google Trends data through SerpAPI, detects statistically significant “hype spikes,” and then uses Groq’s Llama 3 to summarize news from that exact time period. The result is a clear, human‑readable explanation that connects data patterns to real‑world events, all delivered through a fast FastAPI backend and a clean, theme‑toggle UI.
 
 ---
 
@@ -24,7 +24,6 @@
 
 * **NumPy** & **SciPy** (Peak detection)
 * **Groq API** (LLM explanations)
-* **HuggingFace Inference API** (Fallback summarization)
 * **Jinja2 Templates** ### **Frontend** * **HTML / TailwindCSS** * **Chart.js** (Data visualization)
 * **Lucide Icons** * **JavaScript** (Fetch API & interactivity)
 
@@ -44,7 +43,7 @@
 ## 📂 Project Structure
 
 ```text
-HypeGraph/
+PopularSongAnalysis/
 │
 ├── main.py                # FastAPI backend logic
 ├── templates/
@@ -63,7 +62,6 @@ Create a `.env` file in the root directory and add your keys:
 
 ```env
 SERPAPI_KEY=your_serpapi_key
-HF_API_KEY=your_huggingface_key
 GROQ_API_KEY=your_groq_key
 LASTFM_API_KEY=optional_key
 
@@ -102,7 +100,7 @@ pip install fastapi uvicorn requests python-dotenv serpapi numpy scipy groq jinj
 ### 4. Run Server
 
 ```bash
-python main.py
+uvicorn main:app --reload
 
 ```
 
