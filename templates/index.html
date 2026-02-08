@@ -13,36 +13,56 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         
         :root {
+            --ut-orange: #BF5700; /* Official UT Burnt Orange */
+            --ut-dark: #333f48;   /* Official UT Charcoal */
             --bg-color: #0f172a;
-            --bg-gradient-1: #1e293b;
-            --accent-color: #38bdf8; /* Sky Blue */
+            --accent-color: #38bdf8;
             --accent-gradient: linear-gradient(to right, #38bdf8, #3b82f6);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
         }
 
-        body.theme-orange {
-            --bg-color: #4b230d; /* Dark Burnt Orange */
-            --bg-gradient-1: #78350f;
-            --accent-color: #fb923c; /* Bright Orange */
-            --accent-gradient: linear-gradient(to right, #f97316, #ea580c);
+        body.theme-ut {
+            --bg-color: #212121; 
+            --bg-gradient-1: #BF5700;
+            --accent-color: #BF5700;
+            --accent-gradient: linear-gradient(to right, #BF5700, #8d4000);
+            --text-muted: #ffffff; /* All text becomes white */
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-color);
-            background-image: radial-gradient(circle at 0% 0%, var(--bg-gradient-1) 0%, transparent 50%),
+            background-image: radial-gradient(circle at 0% 0%, var(--bg-gradient-1) 20%, transparent 50%),
                             radial-gradient(circle at 100% 100%, var(--bg-color) 0%, transparent 50%);
             min-height: 100vh;
-            color: #f8fafc;
-            margin: 0;
-            transition: background 0.3s ease;
+            color: var(--text-main);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Update dynamic elements to use variables */
+        /* Target specific classes to override Tailwind's slate colors */
+        .theme-ut p, 
+        .theme-ut label, 
+        .theme-ut .text-slate-400, 
+        .theme-ut .text-slate-500,
+        .theme-ut h1,
+        .theme-ut h2,
+        .theme-ut h3 {
+            color: #ffffff !important;
+        }
+
+        .theme-ut .glass {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .theme-ut button[type="submit"] {
+            background-color: var(--ut-orange) !important;
+            box-shadow: 0 4px 14px 0 rgba(191, 87, 0, 0.39);
+        }
+
         .text-transparent { background-image: var(--accent-gradient); }
-        .neon-border:focus { border-color: var(--accent-color); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
-        .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         
-        /* Toggle Switch Styling */
         .theme-switch {
             position: fixed;
             top: 1.5rem;
@@ -147,26 +167,28 @@
         </div>
 
         <script>
+            // 1. Initialize the chart and store it in window.myChartInstance
             var ctx = document.getElementById('myChart').getContext('2d');
-            var gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
-            gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            
+            // Check initial theme state for setup
+            const isInitiallyUT = document.body.classList.contains('theme-ut');
+            const initialColor = isInitiallyUT ? '#BF5700' : '#38bdf8';
+            const initialTickColor = isInitiallyUT ? '#ffffff' : '#64748b';
 
-            new Chart(ctx, {
+            window.myChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: {{ dates | tojson }},
                     datasets: [{
                         label: 'Interest',
                         data: {{ values | tojson }},
-                        borderColor: '#38bdf8',
+                        borderColor: initialColor,
                         borderWidth: 3,
-                        pointBackgroundColor: '#38bdf8',
+                        pointBackgroundColor: initialColor,
                         pointRadius: 2,
                         pointHoverRadius: 8,
                         tension: 0.4,
-                        fill: true,
-                        backgroundColor: gradient,
+                        fill: false // Removed hardcoded blue gradient for theme compatibility
                     }]
                 },
                 options: {
@@ -185,13 +207,13 @@
                     },
                     scales: {
                         y: { 
-                            grid: { color: '#1e293b' }, 
-                            ticks: { color: '#64748b', font: { size: 12 } }, 
+                            grid: { color: isInitiallyUT ? 'rgba(255,255,255,0.1)' : '#1e293b' }, 
+                            ticks: { color: initialTickColor, font: { size: 12 } }, 
                             beginAtZero: true 
                         },
                         x: { 
                             grid: { display: false }, 
-                            ticks: { color: '#64748b', maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 12 } 
+                            ticks: { color: initialTickColor, maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 12 } 
                         }
                     }
                 }
@@ -208,22 +230,56 @@
 
     <script>
         lucide.createIcons();
-    </script>
-    <script>
+
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
 
+        // Load preference
+        if (localStorage.getItem('theme') === 'ut') {
+            body.classList.add('theme-ut');
+            // Change icon to graduation cap if UT theme is active
+            document.getElementById('themeIcon').setAttribute('data-lucide', 'graduation-cap');
+            lucide.createIcons();
+        }
+
         themeToggle.addEventListener('click', () => {
-            body.classList.toggle('theme-orange');
+            body.classList.toggle('theme-ut');
+            const isUT = body.classList.contains('theme-ut');
+            localStorage.setItem('theme', isUT ? 'ut' : 'slate');
             
-            // Update Chart Colors if chart exists
+            // Update the icon dynamically
+            const icon = document.getElementById('themeIcon');
+            icon.setAttribute('data-lucide', isUT ? 'graduation-cap' : 'palette');
+            lucide.createIcons();
+
+            updateAppTheme(isUT);
+        });
+
+        function updateAppTheme(isUT) {
             if (window.myChartInstance) {
-                const isOrange = body.classList.contains('theme-orange');
-                const newColor = isOrange ? '#fb923c' : '#38bdf8';
+                const utOrange = '#BF5700';
+                const skyBlue = '#38bdf8';
+                const activeColor = isUT ? utOrange : skyBlue;
+                const textColor = isUT ? '#ffffff' : '#64748b';
+                const gridColor = isUT ? 'rgba(255,255,255,0.1)' : '#1e293b';
+
+                // Update Dataset
+                window.myChartInstance.data.datasets[0].borderColor = activeColor;
+                window.myChartInstance.data.datasets[0].pointBackgroundColor = activeColor;
                 
-                window.myChartInstance.data.datasets[0].borderColor = newColor;
-                window.myChartInstance.data.datasets[0].pointBackgroundColor = newColor;
+                // Update Scales
+                window.myChartInstance.options.scales.x.ticks.color = textColor;
+                window.myChartInstance.options.scales.y.ticks.color = textColor;
+                window.myChartInstance.options.scales.y.grid.color = gridColor;
+                
                 window.myChartInstance.update();
+            }
+        }
+
+        // Handle initial chart state
+        window.addEventListener('load', () => {
+            if (body.classList.contains('theme-ut')) {
+                updateAppTheme(true);
             }
         });
     </script>
