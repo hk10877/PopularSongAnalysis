@@ -2,7 +2,7 @@
 
 ### AI-Powered Song Trend Analyzer
 
-**Hype Search** Hype Search is an AI‑powered tool that explains why songs suddenly spike in popularity. It pulls Google Trends data through SerpAPI, detects statistically significant “hype spikes,” and then uses Groq’s Llama 3 to summarize news from that exact time period. The result is a clear, human‑readable explanation that connects data patterns to real‑world events, all delivered through a fast FastAPI backend and a clean, theme‑toggle UI.
+**Hype Search** is an AI‑powered tool that explains why songs suddenly spike in popularity. It pulls Google Trends data through SerpAPI, detects statistically significant “hype spikes,” and then uses Groq’s Llama 3 to summarize news from that exact time period. The result is a clear, human‑readable explanation that connects data patterns to real‑world events, all delivered through a fast FastAPI backend and a clean, theme‑toggle UI.
 
 ---
 
