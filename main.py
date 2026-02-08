@@ -215,17 +215,22 @@ def groq_summarize(headlines, song, artist, date=None):
     text = "\n".join(headlines)
     date_str = f" around {date}" if date else ""
 
-    prompt = f"""
-These are recent news headlines about the song "{song}" by {artist}{date_str}:
-{text}
+    sys_prompt = f"""You are an expert music trend analyst AI specializing in identifying patterns in song popularity, streaming behavior, and cultural influence across platforms. Provide clear, data-driven insights.
+    Explain in simple english and short bullets.
 
-Explain in 3 bullet points why this song spiked in popularity, do not use asterisks, or numbered lists or use the word may.{date_str}. 
+Explain in 3 bullet points why this song spiked in popularity. Do not use asterisks, numbered lists, or the word "may". {date_str}.
 """
+    user_message = f"""
+These are recent news headlines about the song "{song}" by {artist}{date_str}:
+{text}"""
+
+
 
     payload = {
         "model": "llama-3.1-8b-instant",
         "messages": [
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": user_message}
         ],
         "temperature": 0.3,
     }
