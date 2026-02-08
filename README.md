@@ -20,11 +20,11 @@
 
 ## 🛠 Tech Stack
 
-### **Backend** * **FastAPI** & **Python** * **SerpAPI** (Google Trends + News)
+### **Backend** - **FastAPI** & **Python** - **SerpAPI** (Google Trends + News)
 
 * **NumPy** & **SciPy** (Peak detection)
 * **Groq API** (LLM explanations)
-* **Jinja2 Templates** ### **Frontend** * **HTML / TailwindCSS** * **Chart.js** (Data visualization)
+* **Jinja2 Templates** **Frontend** * **HTML / TailwindCSS** * **Chart.js** (Data visualization)
 * **Lucide Icons** * **JavaScript** (Fetch API & interactivity)
 
 ---
