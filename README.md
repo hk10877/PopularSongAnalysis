@@ -74,7 +74,7 @@ LASTFM_API_KEY=optional_key
 ### 1. Clone Repository
 
 ```bash
-git clone [https://github.com/your-username/hype-graph.git](https://github.com/hk10877/PopularSongAnalysis.git)
+git clone https://github.com/hk10877/PopularSongAnalysis.git
 cd PopularSongAnalysis
 
 ```
